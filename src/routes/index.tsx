@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import portraitImg from "@/assets/portrait.jpeg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -93,6 +94,7 @@ const tools = ["Photoshop", "Illustrator", "Figma", "ChatGPT", "Claude", "Firefl
 function Index() {
   const navigate = useNavigate();
   const [discovery, setDiscovery] = useState(false);
+  const [entering, setEntering] = useState(false);
   const [vp, setVp] = useState({ w: 1280, h: 800 });
   const [active, setActive] = useState<Thread | null>(null);
   const [leaving, setLeaving] = useState<Thread | null>(null);
@@ -325,7 +327,13 @@ function Index() {
             </p>
 
             <button
-              onClick={() => setDiscovery(true)}
+              onClick={() => {
+                setEntering(true);
+                window.setTimeout(() => {
+                  setEntering(false);
+                  setDiscovery(true);
+                }, 8000);
+              }}
               className="group mt-12 inline-flex items-center gap-3 px-7 py-4 border transition-colors"
               style={{
                 borderColor: INK,
@@ -369,6 +377,115 @@ function Index() {
         )}
       </AnimatePresence>
 
+      {/* ENTERING TRANSITION OVERLAY */}
+      <AnimatePresence>
+        {entering && (
+          <motion.div
+            key="entering"
+            className="fixed inset-0 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.0, ease: "easeInOut" }}
+            style={{ backgroundColor: INK }}
+          >
+            {/* SVG thread layer — above background, below text */}
+            <svg
+              className="absolute inset-0 w-full h-full pointer-events-none"
+              style={{ zIndex: 5 }}
+            >
+              {/* vertical thread dropping from top edge to knot center */}
+              <motion.path
+                d={`M ${cx} 0 L ${cx} ${cy}`}
+                stroke={RED}
+                strokeWidth={1.5}
+                strokeLinecap="round"
+                fill="none"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 0.9 }}
+                transition={{ duration: 1.8, delay: 0.3, ease: [0.4, 0, 0.2, 1] }}
+              />
+              {/* knot dot at center, appears when vertical line arrives */}
+              <motion.circle
+                cx={cx}
+                cy={cy}
+                r={5}
+                fill={RED}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, delay: 1.9, ease: "easeOut" }}
+              />
+              {/* soft glow behind knot */}
+              <motion.circle
+                cx={cx}
+                cy={cy}
+                r={22}
+                fill={RED}
+                style={{ filter: "blur(14px)" }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.35 }}
+                transition={{ duration: 0.8, delay: 1.9, ease: "easeOut" }}
+              />
+              {/* 4 dashed branches fanning out to project nodes */}
+              {paths.map((p, i) => (
+                <motion.path
+                  key={`intro-branch-${p.id}`}
+                  d={p.d}
+                  stroke={RED}
+                  strokeWidth={1}
+                  strokeDasharray="3 6"
+                  fill="none"
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 0.7 }}
+                  transition={{
+                    duration: 1.4,
+                    delay: 2.1 + i * 0.22,
+                    ease: "easeOut",
+                  }}
+                />
+              ))}
+            </svg>
+
+            {/* text — above SVG */}
+            <div
+              className="absolute inset-0 flex flex-col items-center justify-center gap-5"
+              style={{ zIndex: 10 }}
+            >
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1.4, delay: 2.8, ease: "easeOut" }}
+                style={{
+                  fontFamily: "'Noto Serif KR', 'Noto Serif', serif",
+                  color: IVORY,
+                  fontSize: 18,
+                  letterSpacing: "0.18em",
+                  textAlign: "center",
+                }}
+              >
+                질문을 발견하는 중
+              </motion.p>
+
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.45 }}
+                transition={{ duration: 1.4, delay: 4.8, ease: "easeIn" }}
+                style={{
+                  fontFamily: "ui-monospace, monospace",
+                  color: MUTED,
+                  fontSize: 11,
+                  letterSpacing: "0.22em",
+                  textAlign: "center",
+                  textTransform: "uppercase",
+                }}
+              >
+                Archive of Small Questions
+              </motion.p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* DISCOVERY STAGE */}
       <AnimatePresence>
         {discovery && (
@@ -402,6 +519,22 @@ function Index() {
             >
               Every project began with a question.
             </div>
+
+            {/* designer intro */}
+            <p
+              className="absolute left-0 right-0 text-center pointer-events-none"
+              style={{
+                top: 176,
+                zIndex: 25,
+                fontFamily: "'Noto Serif KR', 'Cormorant Garamond', ui-serif, Georgia, serif",
+                color: "rgba(255,252,245,0.92)",
+                fontSize: 16,
+                fontWeight: 500,
+                letterSpacing: "0.04em",
+              }}
+            >
+              불편함을 발견하고 더 나은 경험을 고민하는 디자이너 김현정 입니다.
+            </p>
 
             {/* WHO? polaroid — hidden archive object */}
             <button
@@ -548,34 +681,59 @@ function Index() {
                       strokeWidth={isHover ? 1.6 : 1}
                       strokeDasharray={isHover ? "0" : "3 6"}
                       fill="none"
-                      opacity={isLeaving ? 0 : lit ? 0.95 : 0.32}
+                      opacity={isLeaving ? 0 : lit ? 0.95 : 0.52}
                       filter={isHover ? "url(#threadGlow)" : undefined}
                       style={{ transition: "opacity 0.25s ease-out, stroke-width 0.25s ease-out" }}
                     />
                   </g>
                 );
               })}
-              {/* central knot — breathing glow */}
+              {/* central knot — breathing glow, intensifies on thread hover */}
               <motion.circle
                 cx={cx}
                 cy={cy}
-                r={20}
+                r={28}
                 fill={RED}
-                style={{ filter: "blur(8px)" }}
-                animate={{ opacity: [0.14, 0.28, 0.14] }}
-                transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+                style={{ filter: "blur(16px)" }}
+                animate={hoverId || litId
+                  ? { opacity: [0.55, 0.85, 0.55] }
+                  : { opacity: [0.14, 0.28, 0.14] }
+                }
+                transition={{
+                  duration: hoverId || litId ? 1.2 : 3.2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
               />
               <motion.circle
                 cx={cx}
                 cy={cy}
-                r={11}
+                r={hoverId || litId ? 14 : 11}
                 fill="none"
                 stroke={RED}
-                strokeWidth={0.8}
-                animate={{ r: [11, 18, 11], strokeOpacity: [0.5, 0.05, 0.5] }}
-                transition={{ duration: 2.6, repeat: Infinity, ease: "easeOut" }}
+                strokeWidth={hoverId || litId ? 1.4 : 0.8}
+                animate={hoverId || litId
+                  ? { r: [14, 26, 14], strokeOpacity: [0.9, 0.12, 0.9] }
+                  : { r: [11, 18, 11], strokeOpacity: [0.5, 0.05, 0.5] }
+                }
+                transition={{
+                  duration: hoverId || litId ? 1.2 : 2.6,
+                  repeat: Infinity,
+                  ease: "easeOut",
+                }}
               />
-              <circle cx={cx} cy={cy} r={6} fill={RED} />
+              <circle
+                cx={cx}
+                cy={cy}
+                r={6}
+                fill={RED}
+                style={{
+                  filter: hoverId || litId
+                    ? "drop-shadow(0 0 6px rgba(201,90,90,1)) drop-shadow(0 0 12px rgba(201,90,90,0.6))"
+                    : undefined,
+                  transition: "filter 0.3s ease-out",
+                }}
+              />
             </svg>
 
 
@@ -614,7 +772,7 @@ function Index() {
                     maxWidth: 240,
                   }}
                 >
-                  “{w.text}”
+                  "{w.text}"
                 </div>
               ))}
             </div>
@@ -637,7 +795,7 @@ function Index() {
                     maxWidth: 240,
                   }}
                 >
-                  “{w.text}”
+                  "{w.text}"
                 </div>
               ))}
             </div>
@@ -663,36 +821,47 @@ function Index() {
                     style={{
                       left: t.x,
                       top: t.y,
-                      transform: `translate(-50%, ${ty}) scale(${isHover ? 1.04 : 1})`,
+                      transform: `translate(-50%, ${ty}) scale(${lit ? 1.04 : 1})`,
                       width: 220,
                       cursor: "none",
-                      opacity: lit ? 1 : 0.28,
-                      transition: "opacity 0.2s ease-out, transform 0.25s ease-out",
+                      opacity: lit ? 1 : 0.72,
+                      transition: "opacity 0.25s ease-out, transform 0.25s ease-out",
                     }}
                   >
-
                     <div
                       className="text-[10px] tracking-[0.32em] mb-2"
-                      style={{ fontFamily: "ui-monospace, monospace", color: RED }}
+                      style={{
+                        fontFamily: "ui-monospace, monospace",
+                        color: RED,
+                        textShadow: lit
+                          ? "0 0 8px rgba(201,90,90,0.9), 0 0 20px rgba(201,90,90,0.4)"
+                          : undefined,
+                        transition: "text-shadow 0.25s ease-out",
+                      }}
                     >
                       {t.code}
                     </div>
                     <div
                       style={{
-                        color: IVORY,
+                        color: lit ? "#ffffff" : IVORY,
                         fontSize: 15,
                         lineHeight: 1.5,
-                        fontWeight: 400,
+                        fontWeight: lit ? 500 : 400,
                         letterSpacing: "-0.005em",
+                        textShadow: lit
+                          ? "0 0 12px rgba(255,252,245,0.8), 0 0 28px rgba(255,252,245,0.3)"
+                          : undefined,
+                        transition: "color 0.25s ease-out, text-shadow 0.25s ease-out",
                       }}
                     >
-                      “{t.hint}”
+                      "{t.hint}"
                     </div>
                     <div
                       className="mt-3 text-[10px] tracking-[0.28em] uppercase"
                       style={{
                         fontFamily: "ui-monospace, monospace",
-                        color: "rgba(243,237,226,0.5)",
+                        color: lit ? "rgba(243,237,226,0.95)" : "rgba(243,237,226,0.65)",
+                        transition: "color 0.25s ease-out",
                       }}
                     >
                       {t.title}
@@ -790,7 +959,7 @@ function Index() {
                 className="mt-5 text-base"
                 style={{ color: "#3a352e", fontStyle: "italic" }}
               >
-                “{active.hint}”
+                "{active.hint}"
               </p>
               <div
                 className="my-7 h-px w-full"
@@ -972,24 +1141,14 @@ function Index() {
                             style={{
                               width: "100%",
                               height: 230,
-                              backgroundColor: "#e9e0cf",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              backgroundImage:
-                                "repeating-linear-gradient(45deg, rgba(0,0,0,0.02) 0 2px, transparent 2px 4px)",
+                              overflow: "hidden",
                             }}
                           >
-                            <span
-                              style={{
-                                fontFamily:
-                                  "'Caveat', 'Patrick Hand', cursive",
-                                fontSize: 22,
-                                color: MUTED,
-                              }}
-                            >
-                              portrait
-                            </span>
+                            <img
+                              src={portraitImg}
+                              alt="portrait"
+                              className="w-full h-full object-cover"
+                            />
                           </div>
                           <div
                             className="mt-4 flex items-baseline gap-2"
@@ -1133,11 +1292,11 @@ function Index() {
                             {[
                               {
                                 label: "Instagram",
-                                href: "https://instagram.com/",
+                                href: "https://www.instagram.com/02.07_hj/",
                               },
                               {
                                 label: "Google Drive",
-                                href: "https://drive.google.com/",
+                                href: "https://drive.google.com/file/d/1DNYx-N-k6pUP2tDIk6MtIbgYslaHFo6G/view?usp=sharing",
                               },
                               { label: "Resume", href: "#" },
                             ].map((l) => (

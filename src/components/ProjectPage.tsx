@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import type { ReactNode } from "react";
 
 const IVORY = "#f3ede2";
@@ -114,6 +114,9 @@ function ThreadProgress({ code }: { code: string }) {
 
 
 export default function ProjectPage({ meta }: { meta: ProjectMeta }) {
+  const { scrollY } = useScroll();
+  const heroY = useTransform(scrollY, [0, 400], [0, -22]);
+
   return (
     <main
       className="relative min-h-screen"
@@ -159,16 +162,17 @@ export default function ProjectPage({ meta }: { meta: ProjectMeta }) {
       >
         <div className="max-w-4xl mx-auto text-center">
           <MonoLabel>{meta.code}</MonoLabel>
-          <h1
+          <motion.h1
             className="mt-6 leading-[1.05]"
             style={{
               fontSize: "clamp(48px, 7vw, 88px)",
               fontWeight: 500,
               letterSpacing: "-0.02em",
+              y: heroY,
             }}
           >
             {meta.title}
-          </h1>
+          </motion.h1>
           <p
             className="mt-10 mx-auto"
             style={{
@@ -228,7 +232,13 @@ export default function ProjectPage({ meta }: { meta: ProjectMeta }) {
       <section className="px-6 md:px-16 pb-32">
         <div className="max-w-6xl mx-auto">
           {meta.sections.map((s, i) => (
-            <article key={s.id}>
+            <motion.article
+              key={s.id}
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.7, ease: [0.2, 0.8, 0.2, 1] }}
+            >
               {i > 0 ? <Divider /> : <div className="my-16" />}
 
               <div className="max-w-3xl mx-auto">
@@ -286,7 +296,7 @@ export default function ProjectPage({ meta }: { meta: ProjectMeta }) {
                   ))}
                 </div>
               ) : null}
-            </article>
+            </motion.article>
           ))}
         </div>
       </section>
